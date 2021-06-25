@@ -1,21 +1,41 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -Eeuo pipefail
 
-while getopts "d:hq:r" opt
+# "-h", help message
+usage() {
+    cat <<EOF
+A simple converter that can batch convert images to webp format, or vice versa.
+----
+usage: converter.sh [-h] [-d DIR] [-q RATIO] [-r]
+
+optional arguments:
+-h       show the help message.
+-d       specify the input directory, default is the current directory.
+-o       specify the output directory, default is the current directory.
+-q       quality ratio (0 ~ 100), default is 75.
+-r       process directories and files recursively.
+EOF
+    exit
+}
+
+while getopts "d:ho:q:r" opt
 do
     case $opt in
         d)
-            echo "The dirctory is $OPTARG"
+            input_dir=$OPTARG
             ;;
         h)
-            echo "This is the help command"
+            usage
+            ;;
+        o)
+            output_dir=$OPTARG
             ;;
         q)
-            echo "The picture quality is $OPTARG"
+            ratio=$OPTARG
             ;;
         r)
-            echo "Process images recursively"
+            recursive=true
             ;;
         ?)
             echo "Unknown option"
