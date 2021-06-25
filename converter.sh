@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
+#
+# batch convert images to webp format, or vice versa.
 
+# fail fast
 set -Eeuo pipefail
 
-# current dir
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+# get current dir
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
-# "-h", help message
-usage() {
-    cat <<EOF
+####
+# Show help message function ('-h')
+####
+help_message() {
+  cat <<EOF
 A simple converter that can batch convert images to webp format, or vice versa.
 ----
 usage: converter.sh [-h] [-d DIR] [-q RATIO] [-r]
@@ -19,30 +24,52 @@ optional arguments:
 -q       quality ratio (0 ~ 100), default is 75.
 -r       process directories and files recursively.
 EOF
-    exit
+  exit
 }
 
-while getopts "d:ho:q:r" opt
-do
-    case $opt in
-        d)
-            input_dir=$OPTARG
-            ;;
-        h)
-            usage
-            ;;
-        o)
-            output_dir=$OPTARG
-            ;;
-        q)
-            ratio=$OPTARG
-            ;;
-        r)
-            recursive=true
-            ;;
-        ?)
-            echo "Unknown option"
-            exit 1
-            ;;
-    esac
+####
+# Set default value function
+####
+set_default_var() {
+  # INPUT_DIR
+  INPUT_DIR=${INPUT_DIR:-${SCRIPT_DIR}}
+  # OUTPUT_DIR
+  OUTPUT_DIR=${OUTPUT_DIR:-${SCRIPT_DIR}}
+  # RATIO
+  RATIO=${RATIO:-75}
+  # RECURSIVE
+  RECURSIVE=${RECURSIVE:=false}
+}
+
+# get user input argument
+while getopts "d:ho:q:r" opt; do
+  case ${opt} in
+    d)
+      INPUT_DIR=${OPTARG} ;;
+    h)
+      help_message ;; # help function
+    o)
+      OUTPUT_DIR=${OPTARG} ;;
+    q)
+      RATIO=${OPTARG} ;;
+    r)
+      RECURSIVE=true ;;
+    *)
+      echo "Unknown option"
+      exit 1
+      ;;
+  esac
 done
+
+####
+# main function
+####
+main() {
+  set_default_var
+
+  echo "${INPUT_DIR}"
+  echo "${OUTPUT_DIR}"
+  echo "${RATIO}"
+  echo "${RECURSIVE}"
+}
+main
