@@ -41,6 +41,21 @@ set_default_var() {
   RECURSIVE=${RECURSIVE:=false}
 }
 
+####
+# Argument check
+####
+argument_check() {
+  if [[ ! -d ${INPUT_DIR} ]]; then
+    echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
+    exit 1
+  elif [[ ! -d ${OUTPUT_DIR} ]]; then
+    echo "Output directory path[-o]: '${OUTPUT_DIR}' does not exist!" 
+    exit 1
+  elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
+    echo "Quality ratio[-q] should be between 0 and 100!"
+  fi
+}
+
 # get user input argument
 while getopts "d:ho:q:r" opt; do
   case ${opt} in
@@ -61,15 +76,5 @@ while getopts "d:ho:q:r" opt; do
   esac
 done
 
-####
-# main function
-####
-main() {
-  set_default_var
-
-  echo "${INPUT_DIR}"
-  echo "${OUTPUT_DIR}"
-  echo "${RATIO}"
-  echo "${RECURSIVE}"
-}
-main
+set_default_var
+argument_check
