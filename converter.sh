@@ -2,6 +2,9 @@
 
 set -Eeuo pipefail
 
+# current dir
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+
 # "-h", help message
 usage() {
     cat <<EOF
