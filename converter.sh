@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 #
-# batch convert images to webp format, or vice versa.
+# batch convert images to webp format.
 
 # fail fast
 set -Eeuo pipefail
 
 # get current dir
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)
 
 ####
 # Show help message function ('-h')
 ####
 help_message() {
   cat <<EOF
-A simple converter that can batch convert images to webp format, or vice versa.
+A simple converter that can batch convert images to webp format.
 ----
 usage: converter.sh [-h] [-d DIR] [-q RATIO] [-r]
 
@@ -42,17 +42,17 @@ set_default_var() {
 }
 
 ####
-# Argument check
+# Arguments check
 ####
-argument_check() {
+arguments_check() {
   if [[ ! -d ${INPUT_DIR} ]]; then
-    echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
+    echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!" >&2
     exit 1
   elif [[ ! -d ${OUTPUT_DIR} ]]; then
-    echo "Output directory path[-o]: '${OUTPUT_DIR}' does not exist!" 
-    exit 1
+    mkdir "${OUTPUT_DIR}" # create output dir
   elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
-    echo "Quality ratio[-q] should be between 0 and 100!"
+    echo "Quality ratio[-q] should be between 0 and 100!" >&2
+    exit 1
   fi
 }
 
@@ -70,11 +70,11 @@ while getopts "d:ho:q:r" opt; do
     r)
       RECURSIVE=true ;;
     *)
-      echo "Unknown option"
+      echo "Unknown option" >&2
       exit 1
       ;;
   esac
 done
 
 set_default_var
-argument_check
+arguments_check

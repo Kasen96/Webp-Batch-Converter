@@ -1,4 +1,4 @@
 Webp Converter
 ===
 
-Batch convert images to webp format, or vice versa.
+Batch convert images to webp format.
