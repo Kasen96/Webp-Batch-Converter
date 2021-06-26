@@ -36,6 +36,28 @@ EOF
   exit
 }
 
+# traverse and execute files
+# require argument:
+#     INPUT_DIR
+traverse_files() {
+  # check the path ends with "/" or not
+  if [[ ${1:0-1:1} = "/" ]]; then
+    local path="$1*"
+  else
+    local path="$1/*"
+  fi
+  # traverse files
+  for file in ${path}; do # do not use $(ls ...)
+    if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
+      traverse_files "${file}"
+    elif [[ -f "${file}" && ${RECURSIVE} = false ]]; then
+      echo "${file} is a file"
+    else
+      echo "Error! ${file}"
+    fi
+  done
+}
+
 #----------------------------------------------------------
 # main
 
@@ -45,10 +67,17 @@ if [[ $# -eq 0 ]]; then
   read -rn1 execarg
   case ${execarg} in
     Y | y)
-      echo ;;
+      echo
+      ;;
     N | n)
       echo
-      exit 1;;
+      exit 1
+      ;;
+    *)
+      echo
+      echo "Unknown input."
+      exit 1
+      ;;
   esac
 else
   # get user input argument
@@ -67,7 +96,7 @@ else
       y)
         ;;
       *)
-        echo "Unknown option" >&2
+        echo "Unknown option."
         exit 1
         ;;
     esac
@@ -75,30 +104,30 @@ else
 fi
 
 # arguments check
-if [[ ! -d ${INPUT_DIR} ]]; then
-  echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!" >&2
+if [[ ! -d "${INPUT_DIR}" ]]; then
+  echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
   exit 1
-elif [[ ! -d ${OUTPUT_DIR} ]]; then
+elif [[ ! -d "${OUTPUT_DIR}" ]]; then
   mkdir "${OUTPUT_DIR}" # create output dir
 elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
-  echo "Quality ratio[-q] should be between 0 and 100!" >&2
+  echo "Quality ratio[-q] should be between 0 and 100!"
   exit 1
 fi
 
 # execute conversion
 if type cwebp > /dev/null 2>&1; then
   # cwebp exists
-  echo "cwebp"
+  traverse_files "${INPUT_DIR}"
 else
   # cwebp does not exist, install hint
-  echo "Sorry, 'cwebp' is not installed in the system." >&2
+  echo "Sorry, 'cwebp' is not installed in the system."
   if [[ ${OSNAME} = "ubuntu" || ${OSNAME} = "debian" ]]; then
-    echo "Use 'apt install webp' to install." >&2
+    echo "Use 'apt install webp' to install."
   elif [[ ${OSNAME} = "centos" ]]; then
-    echo "Use 'yum install libwebp-tools' to install." >&2
+    echo "Use 'yum install libwebp-tools' to install."
   elif [[ ${OSNAME} = "fedora" ]]; then
-    echo "Use 'dnf install libwebp-tools' to install." >&2
+    echo "Use 'dnf install libwebp-tools' to install."
   else
-    echo "Please download manually from https://developers.google.com/speed/webp/download." >&2
+    echo "Please download manually from https://developers.google.com/speed/webp/download."
   fi
 fi
