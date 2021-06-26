@@ -34,26 +34,20 @@ EOF
   exit
 }
 
-# arguments check
-arguments_check() {
-  if [[ ! -d ${INPUT_DIR} ]]; then
-    echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!" >&2
-    exit 1
-  elif [[ ! -d ${OUTPUT_DIR} ]]; then
-    mkdir "${OUTPUT_DIR}" # create output dir
-  elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
-    echo "Quality ratio[-q] should be between 0 and 100!" >&2
-    exit 1
-  fi
-}
-
 #----------------------------------------------------------
 # main
 
 # if no input arguments
 if [[ $# -eq 0 ]]; then
-  help_message
-  exit 1
+  echo "Execute the conversion (only in the current directory)[Y|N]?"
+  read -rn1 execarg
+  case ${execarg} in
+    Y | y)
+      echo ;;
+    N | n)
+      echo
+      exit 1;;
+  esac
 else
   # get user input argument
   while getopts "d:ho:q:r" opt; do
@@ -76,4 +70,22 @@ else
   done
 fi
 
-arguments_check
+# arguments check
+if [[ ! -d ${INPUT_DIR} ]]; then
+  echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!" >&2
+  exit 1
+elif [[ ! -d ${OUTPUT_DIR} ]]; then
+  mkdir "${OUTPUT_DIR}" # create output dir
+elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
+  echo "Quality ratio[-q] should be between 0 and 100!" >&2
+  exit 1
+fi
+
+# execute conversion
+if type cwebp > /dev/null 2>&1; then
+  # cwebp exists
+  echo "cwebp"
+else
+  # cwebp does not exist
+  echo "Sorry, 'cwebp' is not installed in the system."
+fi
