@@ -36,6 +36,25 @@ EOF
   exit
 }
 
+# check file format
+is_image() {
+  local suffix="${1##*.}"
+  case ${suffix} in
+    "jpg" | "jpeg")
+      return 0 ;;
+    "JPG" | "JPEG")
+      return 0 ;;
+    "png" | "PNG")
+      return 0 ;;
+    "tif" | "tiff")
+      return 0 ;;
+    "TIF" | "TIFF")
+      return 0 ;;
+    *)
+      return 1 ;;
+  esac
+}
+
 # traverse and execute files
 # require argument:
 #     INPUT_DIR
@@ -56,8 +75,8 @@ traverse_files() {
     # if it is dir
     if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
       traverse_files "${file}"
-    # if it is file
-    elif [[ -f "${file}" && -r "${file}" ]]; then
+    # if it is image
+    elif is_image "${file}" && [[ -f "${file}" && -r "${file}" ]]; then
       # if specify '-o'
       if [[ -d "${OUTPUT_DIR}" ]]; then
         # extract the image file names and rename it to ".webp"
@@ -75,8 +94,8 @@ traverse_files() {
         echo "${output_file_name}"
       fi
       # cwebp -quiet
-    # if it is file and can not be read
-    elif [[ -f "${file}" && ! -r "${file}" ]]; then
+    # if it is image and can not be read
+    elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then
       echo "'${file}' can not be read!"
     fi
   done
