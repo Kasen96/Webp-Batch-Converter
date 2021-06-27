@@ -40,20 +40,28 @@ EOF
 # require argument:
 #     INPUT_DIR
 traverse_files() {
+  # change IFS
+  local savedifs=${IFS}
+  IFS=$'\n'
+
   # check the path ends with "/" or not
   if [[ ${1:0-1:1} = "/" ]]; then
     local path="$1*"
   else
     local path="$1/*"
   fi
+
   # traverse files
   for file in ${path}; do # do not use $(ls ...)
     if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
       traverse_files "${file}"
-    elif [[ -f "${file}" && ${RECURSIVE} = false ]]; then
-      echo "${file} is a file"
+    elif [[ -f "${file}" ]]; then
+      echo "'${file}' is a file"
     fi
   done
+
+  # restore IFS
+  IFS=${savedifs}
 }
 
 #----------------------------------------------------------
