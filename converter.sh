@@ -52,8 +52,6 @@ traverse_files() {
       traverse_files "${file}"
     elif [[ -f "${file}" && ${RECURSIVE} = false ]]; then
       echo "${file} is a file"
-    else
-      echo "Error! ${file}"
     fi
   done
 }
@@ -121,13 +119,14 @@ if type cwebp > /dev/null 2>&1; then
 else
   # cwebp does not exist, install hint
   echo "Sorry, 'cwebp' is not installed in the system."
-  if [[ ${OSNAME} = "ubuntu" || ${OSNAME} = "debian" ]]; then
-    echo "Use 'apt install webp' to install."
-  elif [[ ${OSNAME} = "centos" ]]; then
-    echo "Use 'yum install libwebp-tools' to install."
-  elif [[ ${OSNAME} = "fedora" ]]; then
-    echo "Use 'dnf install libwebp-tools' to install."
-  else
-    echo "Please download manually from https://developers.google.com/speed/webp/download."
-  fi
+  case ${OSNAME} in
+    "ubuntu" | "debian")
+      echo "Use 'apt install webp' to install." ;;
+    "centos")
+      echo "Use 'yum install libwebp-tools' to install." ;;
+    "fedora")
+      echo "Use 'dnf install libwebp-tools' to install." ;;
+    *)
+      echo "Please download manually from https://developers.google.com/speed/webp/download." ;;
+  esac
 fi
