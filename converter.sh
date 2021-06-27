@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 #
-# batch convert images to webp format.
+# Convert pictures to webp format in batches.
+# 
+# Ugly, should use python in the beginning.
 
 #----------------------------------------------------------
-
 # fail fast
 set -Eeuo pipefail
 
 # set global var, default value
 OSNAME=$(cat /etc/*release | grep -E ^ID | cut -f2 -d"=")
+readonly OSNAME
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)
+readonly SCRIPT_DIR
 INPUT_DIR=${SCRIPT_DIR}
 OUTPUT_DIR= # null, use the source file location.
 RATIO=75
@@ -18,12 +21,14 @@ RECURSIVE=false
 #----------------------------------------------------------
 # functions
 
+#######################################
 # show help message function ('-h')
+#######################################
 help_message() {
   cat <<EOF
 A simple converter that can batch convert images to webp format.
 ----
-usage: converter.sh [-h] [-d DIR] [-q RATIO] [-r] [-y]
+usage: converter.sh [-h] [-d DIR] [-o DIR] [-q RATIO] [-r] [-y]
 
 optional arguments:
 -h       Show the help message.
@@ -36,7 +41,23 @@ EOF
   exit
 }
 
+#######################################
+# error message
+#######################################
+err() {
+  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+}
+
+#######################################
 # check file format
+# Globals:
+#   None
+# Arguments:
+#   $1 - file path
+# Returns:
+#   0 - images
+#   1 - other files
+#######################################
 is_image() {
   local suffix="${1##*.}"
   case ${suffix} in
@@ -55,9 +76,22 @@ is_image() {
   esac
 }
 
-# traverse and execute files
-# require argument:
-#     INPUT_DIR
+#######################################
+# recursive function
+# 
+# If it is a folder, continue recursively;
+# If it is a picture, convert.
+#
+# Globals:
+#   IFS
+#   RECURSIVE
+#   OUTPUT_DIR
+#   RATIO
+# Arguments:
+#   $1 - input dir path
+# Returns:
+#   None
+#######################################
 traverse_files() {
   # change IFS
   local savedifs=${IFS}
@@ -72,13 +106,10 @@ traverse_files() {
 
   # traverse files
   for file in ${path}; do # do not use $(ls ...)
-    # if it is dir
-    if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
+    if [[ -d "${file}" && ${RECURSIVE} = true ]]; then # if it is dir
       traverse_files "${file}"
-    # if it is image
-    elif is_image "${file}" && [[ -f "${file}" && -r "${file}" ]]; then
-      # if specify '-o'
-      if [[ -d "${OUTPUT_DIR}" ]]; then
+    elif is_image "${file}" && [[ -f "${file}" && -r "${file}" ]]; then # if it is image
+      if [[ -d "${OUTPUT_DIR}" ]]; then # if specify '-o'
         # extract the image file names and rename it to ".webp"
         local input_filename
         input_filename=$(echo "${file##*/}" | cut -f1 -d".")".webp"
@@ -95,9 +126,8 @@ traverse_files() {
       # use cwebp to convert images
       # -mt: multi-thread
       cwebp -o "${output_file_name}" -q ${RATIO} -quiet -mt -- "${file}"
-    # if it is image and can not be read
-    elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then
-      echo "'${file}' can not be read!"
+    elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then # if it is image and can not be read
+      err "'${file}' can not be read!"
     fi
   done
 
@@ -118,11 +148,12 @@ if [[ $# -eq 0 ]]; then
       ;;
     N | n)
       echo
+      err "give up."
       exit 1
       ;;
     *)
       echo
-      echo "Unknown input."
+      err "Unknown input."
       exit 1
       ;;
   esac
@@ -143,7 +174,7 @@ else
       y)
         ;;
       *)
-        echo "Unknown option."
+        err "Unknown option."
         exit 1
         ;;
     esac
@@ -152,12 +183,12 @@ fi
 
 # arguments check
 if [[ ! -d "${INPUT_DIR}" ]]; then
-  echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
+  err "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
   exit 1
 elif [[ ${OUTPUT_DIR} && ! -d "${OUTPUT_DIR}" ]]; then
   mkdir "${OUTPUT_DIR}" # create output dir
 elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
-  echo "Quality ratio[-q] should be between 0 and 100!"
+  err "Quality ratio[-q] should be between 0 and 100!"
   exit 1
 fi
 
@@ -167,15 +198,15 @@ if type cwebp > /dev/null 2>&1; then
   traverse_files "${INPUT_DIR}"
 else
   # cwebp does not exist, install hint
-  echo "Sorry, 'cwebp' is not installed in the system."
+  err "Sorry, 'cwebp' is not installed in the system."
   case ${OSNAME} in
     "ubuntu" | "debian")
-      echo "Use 'apt install webp' to install." ;;
+      err "Use 'apt install webp' to install." ;;
     "centos")
-      echo "Use 'yum install libwebp-tools' to install." ;;
+      err "Use 'yum install libwebp-tools' to install." ;;
     "fedora")
-      echo "Use 'dnf install libwebp-tools' to install." ;;
+      err "Use 'dnf install libwebp-tools' to install." ;;
     *)
-      echo "Please download manually from https://developers.google.com/speed/webp/download." ;;
+      err "Please download manually from https://developers.google.com/speed/webp/download." ;;
   esac
 fi
