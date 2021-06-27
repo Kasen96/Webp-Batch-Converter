@@ -7,13 +7,13 @@
 # fail fast
 set -Eeuo pipefail
 
-# set Global Var
+# set global var, default value
 OSNAME=$(cat /etc/*release | grep -E ^ID | cut -f2 -d"=")
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)
-INPUT_DIR=${INPUT_DIR:-${SCRIPT_DIR}}
-OUTPUT_DIR=${OUTPUT_DIR:-${SCRIPT_DIR}}
-RATIO=${RATIO:-75}
-RECURSIVE=${RECURSIVE:=false}
+INPUT_DIR=${SCRIPT_DIR}
+OUTPUT_DIR= # null, use the source file location.
+RATIO=75
+RECURSIVE=false
 
 #----------------------------------------------------------
 # functions
@@ -28,7 +28,7 @@ usage: converter.sh [-h] [-d DIR] [-q RATIO] [-r] [-y]
 optional arguments:
 -h       Show the help message.
 -d       Specify the input directory, default is the current directory.
--o       Specify the output directory, default is the current directory.
+-o       Specify the output directory, default is the source file location
 -q       Quality ratio (0 ~ 100), default is 75.
 -r       Process recursively.
 -y       Skip confirmation and convert images in the current directory only.
@@ -53,10 +53,29 @@ traverse_files() {
 
   # traverse files
   for file in ${path}; do # do not use $(ls ...)
+    # if it is dir
     if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
       traverse_files "${file}"
+    # if it is file
     elif [[ -f "${file}" && -r "${file}" ]]; then
-      echo "'${file}' is a file"
+      # if specify '-o'
+      if [[ -d "${OUTPUT_DIR}" ]]; then
+        # extract the image file names and rename it to ".webp"
+        local input_filename
+        input_filename=$(echo "${file##*/}" | cut -f1 -d".")".webp"
+        # add output folder prefix
+        if [[ ${OUTPUT_DIR:0-1:1} = "/" ]]; then # check the path ends with "/" or not
+          local output_file_name="${OUTPUT_DIR}${input_filename}"
+        else
+          local output_file_name="${OUTPUT_DIR}/${input_filename}"
+        fi
+        echo "${output_file_name}"
+      else
+        local output_file_name="${file%.*}.webp"
+        echo "${output_file_name}"
+      fi
+      # cwebp -quiet
+    # if it is file and can not be read
     elif [[ -f "${file}" && ! -r "${file}" ]]; then
       echo "'${file}' can not be read!"
     fi
@@ -115,7 +134,7 @@ fi
 if [[ ! -d "${INPUT_DIR}" ]]; then
   echo "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
   exit 1
-elif [[ ! -d "${OUTPUT_DIR}" ]]; then
+elif [[ ${OUTPUT_DIR} && ! -d "${OUTPUT_DIR}" ]]; then
   mkdir "${OUTPUT_DIR}" # create output dir
 elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
   echo "Quality ratio[-q] should be between 0 and 100!"
