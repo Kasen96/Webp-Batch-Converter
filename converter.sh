@@ -55,8 +55,10 @@ traverse_files() {
   for file in ${path}; do # do not use $(ls ...)
     if [[ -d "${file}" && ${RECURSIVE} = true ]]; then
       traverse_files "${file}"
-    elif [[ -f "${file}" ]]; then
+    elif [[ -f "${file}" && -r "${file}" ]]; then
       echo "'${file}' is a file"
+    elif [[ -f "${file}" && ! -r "${file}" ]]; then
+      echo "'${file}' can not be read!"
     fi
   done
 
