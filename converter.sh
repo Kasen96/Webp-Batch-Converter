@@ -88,12 +88,13 @@ traverse_files() {
         else
           local output_file_name="${OUTPUT_DIR}/${input_filename}"
         fi
-        echo "${output_file_name}"
       else
         local output_file_name="${file%.*}.webp"
-        echo "${output_file_name}"
       fi
-      # cwebp -quiet
+
+      # use cwebp to convert images
+      # -mt: multi-thread
+      cwebp -o "${output_file_name}" -q ${RATIO} -quiet -mt -- "${file}"
     # if it is image and can not be read
     elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then
       echo "'${file}' can not be read!"
