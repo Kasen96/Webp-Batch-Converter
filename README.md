@@ -5,7 +5,8 @@ Convert pictures to webp format in batches.
 
 # Environment
 
-* Debian / Ubuntu
+* Linux (Debian / Ubuntu / CentOS ...)
+* MacOS
 
 # Usage
 

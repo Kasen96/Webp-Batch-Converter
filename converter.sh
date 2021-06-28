@@ -9,7 +9,11 @@
 set -Eeuo pipefail
 
 # set global var, default value
-OSNAME=$(cat /etc/*release | grep -E ^ID | cut -f2 -d"=")
+if [[ $(uname) = "Darwin" ]]; then
+  OSNAME="MacOS"
+elif [[ $(uname) = "Linux" ]]; then
+  OSNAME=$(cat /etc/*release | grep -E ^ID= | cut -f2 -d"=")
+fi
 readonly OSNAME
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)
 readonly SCRIPT_DIR
@@ -200,9 +204,11 @@ else
   # cwebp does not exist, install hint
   err "Sorry, 'cwebp' is not installed in the system."
   case ${OSNAME} in
+    "MacOS")
+      err "Use 'brew install webp' to install." ;;
     "ubuntu" | "debian")
       err "Use 'apt install webp' to install." ;;
-    "centos")
+    "\"centos\"")
       err "Use 'yum install libwebp-tools' to install." ;;
     "fedora")
       err "Use 'dnf install libwebp-tools' to install." ;;
@@ -210,3 +216,7 @@ else
       err "Please download manually from https://developers.google.com/speed/webp/download." ;;
   esac
 fi
+
+#----------------------------------------------------------
+# TODO: Use curl to download cwebp.
+# TODO: convert '.webp' to 'png', 'jpg'...
