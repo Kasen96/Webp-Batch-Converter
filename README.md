@@ -1,27 +1,27 @@
-Webp Batch Converter
-===
+# WebP Converter
 
-Convert pictures to webp format in batches.
+A simple conversion script that can bulk convert images to WebP.
 
-# Environment
+## Install WebP
 
-* Linux (Debian / Ubuntu / CentOS ...)
-* MacOS
+* macOS: `brew install webp`
+* Debian/Ubuntu: `apt install webp`
+* [Manual download](https://developers.google.com/speed/webp/download)
 
-# Usage
+## Usage
 
 ``` sh
 converter.sh [-h] [-d DIR] [-o DIR] [-q RATIO] [-r] [-y]
 
 optional arguments:
 -h       Show the help message.
--d       Specify the input directory, default is the current directory.
--o       Specify the output directory, default is the source file location
+-d       Specify the input directory, the default option is the folder where the script is located.
+-o       Specify the output directory, if it is empty, the default output path is the same as the original image path.
 -q       Quality ratio (0 ~ 100), default is 75.
 -r       Process recursively.
 -y       Skip confirmation and convert images in the current directory only.
 ```
 
-# LICENSE
+## LICENSE
 
 GNU GPL v3

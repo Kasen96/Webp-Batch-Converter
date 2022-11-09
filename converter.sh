@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Convert pictures to webp format in batches.
-# 
+#
 # Ugly, should use python in the beginning.
 
 #----------------------------------------------------------
@@ -9,15 +9,14 @@
 set -Eeuo pipefail
 
 # set global var, default value
-if [[ $(uname) = "Darwin" ]]; then
+if [[ $(uname) == "Darwin" ]]; then
   OSNAME="MacOS"
-elif [[ $(uname) = "Linux" ]]; then
+elif [[ $(uname) == "Linux" ]]; then
   OSNAME=$(cat /etc/*release | grep -E ^ID= | cut -f2 -d"=")
 fi
 readonly OSNAME
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)
-readonly SCRIPT_DIR
-INPUT_DIR=${SCRIPT_DIR}
+
+INPUT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd -P)  # go and get the location of script
 OUTPUT_DIR= # null, use the source file location.
 RATIO=75
 RECURSIVE=false
@@ -30,14 +29,14 @@ RECURSIVE=false
 #######################################
 help_message() {
   cat <<EOF
-A simple converter that can batch convert images to webp format.
+A simple conversion script that can bulk convert images to WebP.
 ----
 usage: converter.sh [-h] [-d DIR] [-o DIR] [-q RATIO] [-r] [-y]
 
 optional arguments:
 -h       Show the help message.
--d       Specify the input directory, default is the current directory.
--o       Specify the output directory, default is the source file location
+-d       Specify the input directory, the default option is the folder where the script is located.
+-o       Specify the output directory, if it is empty, the default output path is the same as the original image path.
 -q       Quality ratio (0 ~ 100), default is 75.
 -r       Process recursively.
 -y       Skip confirmation and convert images in the current directory only.
@@ -49,7 +48,9 @@ EOF
 # error message
 #######################################
 err() {
-  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+  local msg
+  msg="[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*"
+  echo -e "\033[31m$msg\033[0m" >&2
 }
 
 #######################################
@@ -82,7 +83,7 @@ is_image() {
 
 #######################################
 # recursive function
-# 
+#
 # If it is a folder, continue recursively;
 # If it is a picture, convert.
 #
@@ -110,26 +111,26 @@ traverse_files() {
 
   # traverse files
   for file in ${path}; do # do not use $(ls ...)
-    if [[ -d "${file}" && ${RECURSIVE} = true ]]; then # if it is dir
+    if [[ -d "${file}" && ${RECURSIVE} == true ]]; then # if it is dir
       traverse_files "${file}"
     elif is_image "${file}" && [[ -f "${file}" && -r "${file}" ]]; then # if it is image
       if [[ -d "${OUTPUT_DIR}" ]]; then # if specify '-o'
-        # extract the image file names and rename it to ".webp"
-        local input_filename
-        input_filename=$(echo "${file##*/}" | cut -f1 -d".")".webp"
+        # extract the image file name and rename it to ".webp"
+        local filename
+        filename=$(echo "${file##*/}" | cut -f1 -d".")".webp"
         # add output folder prefix
         if [[ ${OUTPUT_DIR:0-1:1} = "/" ]]; then # check the path ends with "/" or not
-          local output_file_name="${OUTPUT_DIR}${input_filename}"
+          local output_path="${OUTPUT_DIR}${filename}"
         else
-          local output_file_name="${OUTPUT_DIR}/${input_filename}"
+          local output_path="${OUTPUT_DIR}/${filename}"
         fi
       else
-        local output_file_name="${file%.*}.webp"
+        local output_path="${file%.*}.webp"
       fi
 
       # use cwebp to convert images
       # -mt: multi-thread
-      cwebp -o "${output_file_name}" -q ${RATIO} -quiet -mt -- "${file}"
+      cwebp -o "${output_path}" -q ${RATIO} -quiet -mt -- "${file}"
     elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then # if it is image and can not be read
       err "'${file}' can not be read!"
     fi
@@ -152,7 +153,7 @@ if [[ $# -eq 0 ]]; then
       ;;
     N | n)
       echo
-      err "give up."
+      err "Abort."
       exit 1
       ;;
     *)
@@ -192,12 +193,12 @@ if [[ ! -d "${INPUT_DIR}" ]]; then
 elif [[ ${OUTPUT_DIR} && ! -d "${OUTPUT_DIR}" ]]; then
   mkdir "${OUTPUT_DIR}" # create output dir
 elif [[ ${RATIO} -gt 100 || ${RATIO} -lt 0 ]]; then
-  err "Quality ratio[-q] should be between 0 and 100!"
+  err "Quality ratio[-q] should be between 0 and 100."
   exit 1
 fi
 
 # execute conversion
-if type cwebp > /dev/null 2>&1; then
+if type cwebp &> /dev/null; then
   # cwebp exists
   traverse_files "${INPUT_DIR}"
 else
@@ -205,18 +206,10 @@ else
   err "Sorry, 'cwebp' is not installed in the system."
   case ${OSNAME} in
     "MacOS")
-      err "Use 'brew install webp' to install." ;;
+      err "It can be installed through 'brew install webp'." ;;
     "ubuntu" | "debian")
-      err "Use 'apt install webp' to install." ;;
-    "\"centos\"")
-      err "Use 'yum install libwebp-tools' to install." ;;
-    "fedora")
-      err "Use 'dnf install libwebp-tools' to install." ;;
+      err "It can be installed through 'apt install webp'." ;;
     *)
       err "Please download manually from https://developers.google.com/speed/webp/download." ;;
   esac
 fi
-
-#----------------------------------------------------------
-# TODO: Use curl to download cwebp.
-# TODO: convert '.webp' to 'png', 'jpg'...
