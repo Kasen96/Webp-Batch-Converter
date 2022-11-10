@@ -61,7 +61,6 @@ spin_progress() {
   local label=('|' '/' '-' "\\")
   local index=$((FILE_COUNTS%4))
   printf "Converting... [%d/%d] [%c] \r" $((FILE_COUNTS+1)) "$TOTAL_FILES" "${label[$index]}"
-  sleep 0.1
   ((FILE_COUNTS+=1))
 }
 
@@ -114,18 +113,26 @@ traverse_files() {
   # traverse files
   for file in ${path}; do
     if [[ -d "${file}" && ${RECURSIVE} == true ]]; then # if it is dir
+
+      # if specify '-o', create corresponding subfolders to keep the same file structure
+      if [[ "${OUTPUT_DIR}" ]]; then
+        local relative_subdirpath
+        relative_subdirpath=$(realpath --relative-to="${INPUT_DIR}" "${file}")"/"
+        if [[ ! -d "${OUTPUT_DIR}${relative_subdirpath}" ]]; then
+          mkdir -p "${OUTPUT_DIR}${relative_subdirpath}"
+        fi
+      fi
+
       traverse_files "${file}"
+
     elif is_webp "${file}" && [[ -f "${file}" && -r "${file}" ]]; then # if it is a webp
-      if [[ -d "${OUTPUT_DIR}" ]]; then # if specify '-o'
+
+      if [[ "${OUTPUT_DIR}" ]]; then # if specify '-o'
         # extract the image name and rename it to ".png"
         local filename
         filename=$(echo "${file##*/}" | cut -f1 -d".")".png"
         # add output folder prefix
-        if [[ ${OUTPUT_DIR:0-1:1} = "/" ]]; then # check the path ends with "/" or not
-          local output_path="${OUTPUT_DIR}${filename}"
-        else
-          local output_path="${OUTPUT_DIR}/${filename}"
-        fi
+        local output_path="${OUTPUT_DIR}${relative_subdirpath}${filename}"
       else
         local output_path="${file%.*}.png"
       fi
@@ -190,8 +197,14 @@ fi
 if [[ ! -d "${INPUT_DIR}" ]]; then
   err "Input directory path[-d]: '${INPUT_DIR}' does not exist!"
   exit 1
-elif [[ ${OUTPUT_DIR} && ! -d "${OUTPUT_DIR}" ]]; then
-  mkdir "${OUTPUT_DIR}" # create output dir
+fi
+if [[ ${OUTPUT_DIR} ]]; then
+  if [[ ! -d "${OUTPUT_DIR}" ]]; then
+    mkdir "${OUTPUT_DIR}" # create output dir
+  fi
+  if [[ ${OUTPUT_DIR:0-1:1} != "/" ]]; then
+    OUTPUT_DIR="${OUTPUT_DIR}/"
+  fi
 fi
 
 # execute conversion
