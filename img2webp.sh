@@ -52,6 +52,22 @@ err() {
 }
 
 #######################################
+# Show a spin progress when converting
+# Arguments:
+#   $1 - display message
+#   $2 - file counts
+# Returns:
+#   None
+#######################################
+spin_progress() {
+  local label=('|' '/' '-' "\\")
+  local index=$((FILE_COUNTS%4))
+  printf "Converting... [%d/%d] [%c] \r" $((FILE_COUNTS+1)) "$TOTAL_FILES" "${label[$index]}"
+  sleep 0.1
+  ((FILE_COUNTS+=1))
+}
+
+#######################################
 # check file format
 # Globals:
 #   None
@@ -125,6 +141,8 @@ traverse_files() {
 
       # use cwebp to convert
       cwebp -o "${output_path}" -q "${RATIO}" -quiet -mt -- "${file}"  # -mt: multi-thread
+      spin_progress
+
     elif is_image "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then # if it is an image and can not be read
       err "'${file}' can not be read!"
     fi
@@ -192,8 +210,18 @@ fi
 
 # execute conversion
 if type cwebp &> /dev/null; then
+  # hide cursor
+  printf "\e[?25l"
+
+  FILE_COUNTS=0
+  TOTAL_FILES=$(find "${INPUT_DIR}" -type f -iname "*.webp" | wc -l)
+
   # cwebp exists
   traverse_files "${INPUT_DIR}"
+
+  # show cursor
+  printf "\e[?25h""\n"
+
 else
   # cwebp does not exist, install hint
   err "Sorry, 'cwebp' is not installed in the system."

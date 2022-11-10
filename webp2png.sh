@@ -50,6 +50,22 @@ err() {
 }
 
 #######################################
+# Show a spin progress when converting
+# Arguments:
+#   $1 - display message
+#   $2 - file counts
+# Returns:
+#   None
+#######################################
+spin_progress() {
+  local label=('|' '/' '-' "\\")
+  local index=$((FILE_COUNTS%4))
+  printf "Converting... [%d/%d] [%c] \r" $((FILE_COUNTS+1)) "$TOTAL_FILES" "${label[$index]}"
+  sleep 0.1
+  ((FILE_COUNTS+=1))
+}
+
+#######################################
 # check file format
 # Globals:
 #   None
@@ -116,6 +132,8 @@ traverse_files() {
 
       # use dwebp to convert
       dwebp -o "${output_path}" -quiet -mt -- "${file}"  # -mt: multi-thread
+      spin_progress
+
     elif is_webp "${file}" && [[ -f "${file}" && ! -r "${file}" ]]; then # if it is a webp and can not be read
       err "'${file}' can not be read!"
     fi
@@ -178,8 +196,18 @@ fi
 
 # execute conversion
 if type dwebp &> /dev/null; then
+  # hide cursor
+  printf "\e[?25l"
+
+  FILE_COUNTS=0
+  TOTAL_FILES=$(find "${INPUT_DIR}" -type f -iname "*.webp" | wc -l)
+
   # dwebp exists
   traverse_files "${INPUT_DIR}"
+
+  # show cursor
+  printf "\e[?25h""\n"
+
 else
   # dwebp does not exist, install hint
   err "Sorry, 'dwebp' is not installed in the system."
